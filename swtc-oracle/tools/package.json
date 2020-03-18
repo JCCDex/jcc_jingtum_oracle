@@ -10,6 +10,8 @@
   "license": "ISC",
   "dependencies": {
     "@swtc/lib": "^1.0.8",
-    "jcc_exchange": "^3.1.0"
+    "jcc_exchange": "^3.1.0",
+    "jcc_wallet": "^1.0.5",
+    "uuid": "^7.0.2"
   }
 }
