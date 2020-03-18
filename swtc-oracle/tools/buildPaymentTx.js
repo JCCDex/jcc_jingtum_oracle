@@ -1,4 +1,5 @@
-const jlib = require("../node_modules/@swtc/lib/cjs");
+const sign = require("jcc_exchange/lib/util/sign").default;
+const jlib = require("@swtc/lib");
 var Remote = jlib.Remote;
 var remote = new Remote({server: 'ws://snmec391023b509.jccdex.cn:5020'})
 const a = {
@@ -18,11 +19,47 @@ let to = 'jKsToDYhqR8J8ApYucgbKcrh5C7eCHa2ed'
 const log_json = object => console.log(JSON.stringify(object, '', 2))
 
 // 创建支付交易
-let tx = remote.buildPaymentTx({ account: a.address, to, amount: remote.makeAmount(1) })
-tx.addMemo('multisigned payment test');
-//console.log("tx-json",remote.makeAmount(1) ,tx);
-let str = lstx.tx_json.replace(/[\r\n]/g,"");
-console.log(str);
+var memo = 'multisigned payment test' ;
+async function createTx(memo){
+  return new Promise(async function(resolve, reject) {
+	let tx = remote.buildPaymentTx({ account: a.address, to, amount: remote.makeAmount(1) })
+	tx.addMemo(memo);
+	await tx._setSequencePromise;
+//	console.log("tx-json",remote.makeAmount(1) ,tx.tx_json);
+//	console.log(JSON.stringify(tx.tx_json));
+	return tx ;
+	});
+}
+
+
+// 给交易内容签名生成Signer
+//async function txSigin(tx)
+//let signer1 = sign(tx.tx_json,a1.secret);
+//let signer2 = sign(tx.tx_json,a2.secret);
+//
+//console.log(tx.tx_json,"signer1:"+ signer1, "signer1:" + signer2);
+
+//构建备注
+function buildMemo(tx_json,Signer){
+
+		let memo = '"tx_json":' + JSON.stringify(tx_json) + '|"Signer":' + JSON.stringify(Signer);
+    return memo;
+
+}		
+
+
+
+
+async function main(){
+	let tx = await createTx('multisigned payment test');
+	console.log("test",tx);
+	let s = buildMemo(tx.tx_json,"testest");
+  console.log(s);
+};
+main();
+console.log("111111");
+//let str = lstx.tx_json.replace(/[\r\n]/g,"");
+//console.log(str);
 /**
 remote.connectPromise()
     .then( async () => {
