@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@swtc/api": "^1.0.7",
     "@swtc/lib": "^1.0.8",
     "jcc_exchange": "^3.1.0",
     "jcc_wallet": "^1.0.5",
