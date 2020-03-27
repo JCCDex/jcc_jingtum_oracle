@@ -2,6 +2,7 @@
 
 var jlib = require('@swtc/lib');
 const JingchangWallet = require("jcc_wallet/lib").JingchangWallet;
+const Wallet = require('@swtc/lib').Wallet
 var fs = require('fs');
 var Remote = jlib.Remote;
 var remote = new Remote({server: 'ws://swtcnode.jccdex.cn:5020', issuer: 'jBciDE8Q3uJjf111VeiUNM775AMKHEbBLS'});
@@ -70,16 +71,27 @@ function checkdata(encode){
 
 // 检查交易内容
 function checkTx(t){
- let txjson = JSON.parse(t)
-console.log(txjson);
+
+ let txjson = JSON.parse("{"+t+"}");
+ if( isNil(txjson.tx_json) && isNil(txjson.tx_json.Account) && isNil(txjson.tx_json.Sequence) && isNil(txjson.tx_json.Destination) ){
+   return false ;
+ }
+ 
+ if(Wallet.isValidAddress(txjson.tx_json.Account) && Wallet.isValidAddress(txjson.tx_json.Destination)){
+    return false ; 
+ }
+
+ return true ;
+//console.log(txjson,Wallet.isValidAddress(txjson.tx_json.Account) );
 
 }
 
 // 存储解密后的交易内容
 function  txJsonHandle(tx){
   let txArr = tx.split('|');
-  checkTx(txArr[0]);
-console.log(txArr);
+
+ checkTx(txArr[0]);
+//console.log(txArr[0],txArr);
 } 
 
 // 获取交易信息，解密备注信息
