@@ -30,12 +30,13 @@ monitor_wallet = {
 
 var data_dir = './data'
 var encode_file = data_dir + '/encode_memos.json'
+var tx_dir = data_dir + '/tx'
 
 var readFile = function (fileName){
     return new Promise(function (resolve, reject){
       fs.readFile(fileName, function(error, data){
         if (error) reject(error);
-        resolve(JSON.parse(data));
+        resolve(data);
       });
     });
 };
@@ -72,26 +73,75 @@ function checkdata(encode){
 // 检查交易内容
 function checkTx(t){
 
- let txjson = JSON.parse("{"+t+"}");
- if( isNil(txjson.tx_json) && isNil(txjson.tx_json.Account) && isNil(txjson.tx_json.Sequence) && isNil(txjson.tx_json.Destination) ){
+ 
+ if( isNil(t) && isNil(t.Account) && isNil(t.Sequence) && isNil(t.Destination) ){
+   console.log("交易内容不合法");
    return false ;
  }
  
- if(Wallet.isValidAddress(txjson.tx_json.Account) && Wallet.isValidAddress(txjson.tx_json.Destination)){
+ if(!Wallet.isValidAddress(t.Account) && !Wallet.isValidAddress(t.Destination)){
+     console.log("地址不合法");
     return false ; 
  }
-
+//console.log(t);
  return true ;
-//console.log(txjson,Wallet.isValidAddress(txjson.tx_json.Account) );
+//console.log(txjson,Wallet.isValidAddress(t.Account) );
 
 }
 
-// 存储解密后的交易内容
-function  txJsonHandle(tx){
-  let txArr = tx.split('|');
+// 查询数组某个字典属性对应的值
+function arrindexof(arr,arv,value){
+    let num =0
+    for ( n = 0, m = arr.length; n < m; n++){
+        if( m == 0){
+         console.log(m);
+         num = m ;
+         //break;
+        }
+        if( arr[n][arv]== value){
+           // console.log("n",n);
+           num = n;
+            //break;
+        }else{
+            num = m ;
+        }
+    }
+   return num;
+}
 
- checkTx(txArr[0]);
+// 存储解密后的交易内容
+async function  txJsonHandle(tx){
+  let txArr = tx.split('|');
+  let txjson1 = JSON.parse("{"+txArr[0]+"}");
+  txjson = txjson1.tx_json;
+ if(!checkTx(txjson)){
+     return false;
+ }
 //console.log(txArr[0],txArr);
+
+// 读取对应Account的钱包地址的文件
+  let f_path = tx_dir + "/" + txjson.Account
+  let f_data = [];
+  if (fs.existsSync(f_path)){
+    let tempdata = await readFile(f_path); 
+    f_data = JSON.parse(tempdata);
+  }
+  
+  let num = arrindexof(f_data,"Sequence",txjson.Sequence);
+  
+  //console.log(num,f_data);
+  if(isNil(f_data[num])){
+    f_data[num] = {};
+    f_data[num].tx_json = {};
+  }
+  
+  let Signers = f_data[num].tx_json.Signers || [];
+  Signers.push(JSON.parse("{"+txArr[1]+"}"));
+  f_data[num].tx_json = txjson ;
+  f_data[num].tx_json.Signers = Signers;
+  f_data[num].Sequence = txjson.Sequence;
+  console.log(f_data[num]);
+  await writeFile(f_path,JSON.stringify(f_data));
 } 
 
 // 获取交易信息，解密备注信息
@@ -108,7 +158,9 @@ function getmemos(address,min){
                 console.log("no transactions---");
                 return false;
             }
-            var encode_list = await readFile(encode_file);
+            var encode_list1 = await readFile(encode_file);
+            //console.log(encode_list1);
+            var encode_list = JSON.parse(encode_list1);
             for (i = 0; i < l; i++){
                 // 排除不符条件的交易
                if(transactions[i].type != 'received'){
@@ -173,6 +225,7 @@ function getmemos(address,min){
                    let decode = await JingchangWallet.decryptWithPrivateKey(encode, keypair.privateKey);
                    //console.log(i,"jiqi",encodeString,decode);
                    txJsonHandle(decode);
+                   console.log(encode_list);
                    encode_list.splice(num,1);
                }
 
