@@ -113,9 +113,27 @@ sequenceDiagram
 2. 两部分数据都做 json 压缩，去掉不必要的空格；
 3. 两者之间用"|"（半角竖线）分割；
 4. 数据示例如下：
+
+   ```javascript
+   "tx_json":
+     {
+       "TransactionType":"Payment",
+       "Account":"jpfYA6g6XhZ2Szr5i9HURvs8jAybYbZmcA",
+       "Destination":"jUYaanwMxMvCqmmZz6tyUtnMnmmwLaikbZ",
+       "Amount":41000000,
+       "Sequence":23,
+       "Fee":20,
+       "SigningPubKey":""
+      }
+   |
+   "Signer":
+      {
+        "Account":"jEiAtrX9qtT6jteSpPhLhZCy5PiZQ23jkh",
+        "SigningPubKey":"02AFAB78AF0D557D55822B8B6AB2F74B89B91B8FC5C3DF10D701B485AE90BD2622",
+        "TxnSignature":"3045022100E070733238F2786EAD2E61F126380F06CB2B29FB9593B8B17BB34A9080ABF14D022020AFF8F812C38F8B05E70D1AC24610D93CE58C532CF9DCD73D5C857CAF3596EC"
+      }
    ```
-   "tx_json":{"TransactionType":"Payment","Account":"jpfYA6g6XhZ2Szr5i9HURvs8jAybYbZmcA","Destination":"jUYaanwMxMvCqmmZz6tyUtnMnmmwLaikbZ","Amount":41000000,"Sequence":23,"Fee":20,"SigningPubKey":""}|"Signer":{"Account":"jEiAtrX9qtT6jteSpPhLhZCy5PiZQ23jkh","SigningPubKey":"02AFAB78AF0D557D55822B8B6AB2F74B89B91B8FC5C3DF10D701B485AE90BD2622","TxnSignature":"3045022100E070733238F2786EAD2E61F126380F06CB2B29FB9593B8B17BB34A9080ABF14D022020AFF8F812C38F8B05E70D1AC24610D93CE58C532CF9DCD73D5C857CAF3596EC"}
-   ```
+
 5. 数据长度：
    - 签名前交易 tx_json: 最大 988("TransactionType":"SignerListSet"时，可以指定 8 个 SignerEntry，此时交易内容最长。即使所有 11 个整数字段取最大值，总长度不会超过 1200)
    - 签名后交易 Signer:303 或 305(Account、SigningPubKey 固定，TxnSignature 为 140 或者 142)
@@ -125,9 +143,15 @@ sequenceDiagram
 1. Memo 数据包含：备注类型、UUID、当前切分块序号、切分块总数、当前切分块内容；签名前交易 tx_json、签名后交易 Signer 三部分；
 2. 五部分数据之间用"|"（半角竖线）分割；
 3. 数据示例如下：
+
+   ```javascript
+   sign_for
+   |27274c88673911eaae330221860e9b7e
+   |02
+   |09
+   |120007220000000024000001B364D4C4F94AE6AF80000000000000000000000000004353500000000000A582E432BFC48EEDEF852C814EC57F3CD2D4159665D447A8DEDE22C000000000000000000000000000434E590000000000A582E432BFC48EEDEF852C814EC57F3CD2D4159668400000000000000...(1900字节)...C2BC05E6C82F38DEFF8583BCD022072B490844539FEA686F7D0ED7AE922723DED6F087A1DE598934BAD36824EBBB6811434F9B6EDDD3716AE7B0889A16CA8811D8255E0D68D14896E3F7353697ECE52645D9C502F08BB2EDC5717
    ```
-   sign_for|27274c88673911eaae330221860e9b7e|02|09|120007220000000024000001B364D4C4F94AE6AF80000000000000000000000000004353500000000000A582E432BFC48EEDEF852C814EC57F3CD2D4159665D447A8DEDE22C000000000000000000000000000434E590000000000A582E432BFC48EEDEF852C814EC57F3CD2D4159668400000000000000...(1900字节)...C2BC05E6C82F38DEFF8583BCD022072B490844539FEA686F7D0ED7AE922723DED6F087A1DE598934BAD36824EBBB6811434F9B6EDDD3716AE7B0889A16CA8811D8255E0D68D14896E3F7353697ECE52645D9C502F08BB2EDC5717
-   ```
+
 4. 数据长度：
    - 备注类型(sign_for)：8（固定）
    - UUID: 32（固定）
@@ -138,7 +162,7 @@ sequenceDiagram
 
 ### 预言机需要的注意点
 
-预言机监控的是某个钱包的转账交易，那么可以收到不是经过交易构造前端发过来的交易。通过引入 UUID，并采用最先受到的交易备注，黑客伪造前端向预言机发送多签交易，应该不能产生大的影响，但是可能导致预言机不正确的将不应该向 SWTC 链提交的多签名提交，导致以前的多签操作失效，因此还是需要注意被攻击的风险。
+预言机监控的是某个钱包的转账交易，那么可以收到不是经过交易构造前端发过来的交易。通过引入 UUID，并采用最先收到的交易备注，黑客伪造前端向预言机发送多签交易，不能产生影响，但是可能导致预言机不正确的将不应该向 SWTC 链提交的多签名提交，导致以前的多签操作失效，因此还是需要注意被攻击的风险。
 
 1. 发送的转账交易备注中多签内容用预言机钱包公钥签名，防止其他人猜测备注中内容格式，也防止多签交易内容泄露。
 2. 预言机在向 SWTC 链提交之前做些力所能及的验证，尽量避免无谓的提交。
